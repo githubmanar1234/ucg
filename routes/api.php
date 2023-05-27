@@ -32,7 +32,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     //accounts
     Route::post('account', [AccountController::class, 'create_account']); //admin
     Route::get('my_accounts', [AccountController::class, 'get_accounts_info']); //client
-    Route::get('accounts', [AccountController::class, 'get_all_accounts']); //admin
+    Route::get('accounts', [AccountController::class, 'get_all_accounts'])->name('accounts'); //admin
 
     
     //transfers

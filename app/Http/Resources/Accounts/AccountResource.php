@@ -19,12 +19,11 @@ class AccountResource extends JsonResource
         if($this->balance !== null){
             $balance = $this->balance;
         }
-        $name = User::find($this->user_id)->name;
+       
         return [
             'id' => $this->id,
             'account_number' => $this->account_number ,
             'user_id' => $this->user_id ,
-            'user_name' => $name ,
             'balance' => $balance,
             'currency' => $this->currency,
             'country' => $this->country,

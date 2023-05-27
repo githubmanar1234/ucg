@@ -24,71 +24,70 @@ class TransactionController extends BaseController
 
     use TransactionTrait;
 
-    public function __construct()
-    {
-        $this->middleware(['permission:get_transactions_history'],['only' => ['get_my_transactions_history']]);
-        $this->middleware(['permission:deposit'],['only' => ['deposit']]);
-        $this->middleware(['permission:withdrawal'],['only' => ['withdrawal']]);
-    }
-
     //get transactions history by client
     public function get_my_transactions_history(){
 
         $user = Auth()->user();
-        
-        $transactions = $user->transactions;
-        $transfers_from = $user->from_transfers;
-        $transfers_to = $user->to_transfers;
-
-        $data['transactions'] = TransactionResource::collection($transactions);
-        $data['transfers_from'] = TransferResource::collection($transfers_from);
-        $data['transfers_to'] = TransferResource::collection($transfers_to);
-
-        return $this->sendResponse($data,'transactions history returned successfully.');
+        if($user->hasPermissionTo('get_transactions_history')){
+            $transactions = $user->transactions;
+            $transfers_from = $user->from_transfers;
+            $transfers_to = $user->to_transfers;
+    
+            $data['transactions'] = TransactionResource::collection($transactions);
+            $data['transfers_from'] = TransferResource::collection($transfers_from);
+            $data['transfers_to'] = TransferResource::collection($transfers_to);
+    
+            return $this->sendResponse($data,'transactions history returned successfully.');
+        }
+        return $this->sendError('You do not have required permission.', ['error'=>'You do not have required permission']); 
     }
 
     //deposit by admin 
     public function deposit(DepositRequest $request)
     {
         $input = $request->all();
-     
-        $transaction = new Transaction();
-        $transaction->amount   = $input['amount'];
-        $transaction->type  = "deposit";
-        $transaction->account_id   = $input['account_id'];
-        $transaction->save();
-       
-        $account = Account::find($input['account_id']);
-        $account->balance = $account->balance + $input['amount'];
-        $account->save();
-      
-        return $this->sendResponse(new TransactionResource($transaction),'Transaction has craeted successfully.');
-      
+        if(Auth()->user()->hasPermissionTo('deposit')){
+            $transaction = new Transaction();
+            $transaction->amount   = $input['amount'];
+            $transaction->type  = "deposit";
+            $transaction->account_id   = $input['account_id'];
+            $transaction->save();
+           
+            $account = Account::find($input['account_id']);
+            $account->balance = $account->balance + $input['amount'];
+            $account->save();
+          
+            return $this->sendResponse(new TransactionResource($transaction),'Transaction has craeted successfully.');
+        }
+        return $this->sendError('You do not have required permission.', ['error'=>'You do not have required permission']); 
     }
 
     //withdrawal by client
     public function withdrawal(WithdrawRequest $request)
     {
         $user_id = Auth()->user()->id;
-        $input = $request->all();
-        $account = Account::where('account_number',$input['account_number'])->first();
-        $check_account = $this->check_account($input['account_number'],$user_id,$input['amount']);
-        if($check_account){
-            $transaction = new Transaction();
-            $transaction->amount   = $input['amount'];
-            $transaction->type  = "withdrawal";
-            $transaction->account_id   = $account->id;
-            $transaction->save();
-
-            $account->balance = $current_balance - $input['amount'];
-            $account->save();
-
-            return $this->sendResponse(new TransactionResource($transaction),'Transaction has craeted successfully.');
-
+        if(Auth()->user()->hasPermissionTo('withdrawal')){
+            $input = $request->all();
+            $account = Account::where('account_number',$input['account_number'])->first();
+            $check_account = $this->check_account($input['account_number'],$user_id,$input['amount']);
+            if($check_account){
+                $transaction = new Transaction();
+                $transaction->amount   = $input['amount'];
+                $transaction->type  = "withdrawal";
+                $transaction->account_id   = $account->id;
+                $transaction->save();
+    
+                $account->balance = $current_balance - $input['amount'];
+                $account->save();
+    
+                return $this->sendResponse(new TransactionResource($transaction),'Transaction has craeted successfully.');
+    
+            }
+            else{
+                return $this->sendError('This account not exist.', ['error'=>'This account not exist']); 
+            }
         }
-        else{
-            return $this->sendError('This account not exist.', ['error'=>'This account not exist']); 
-        }
+        return $this->sendError('You do not have required permission.', ['error'=>'You do not have required permission']); 
              
     }
 

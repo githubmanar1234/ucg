@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Spatie\Permission\Exceptions\UnauthorizedException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -34,8 +35,30 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
+        $this->renderable(function (UnauthorizedException $exception, $request) {
+            if ($exception instanceof UnauthorizedException) {
+               
+                return response()->json([
+                    'success' => false,
+                    'data'    =>(object)[],
+                    'status_code' => 403,
+                    'errors' => [
+                        'You do not have required permission.',
+                    ],
+                ]);
+                
+            }
+            return parent::render($request, $exception);
+        
+        });
+
         $this->reportable(function (Throwable $e) {
             //
         });
+
+        
     }
+
+    
+
 }

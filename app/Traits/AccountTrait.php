@@ -12,13 +12,6 @@ use Illuminate\Support\Facades\Http;
 
 trait AccountTrait {
 
-    //check unique account in one country
-    public function isExist_account() 
-    {
-        
-        
-    }
-
     //get currency by country
     public function get_currency_by_country($country_name){
 
