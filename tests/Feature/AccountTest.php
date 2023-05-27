@@ -12,7 +12,7 @@ class AccountTest extends TestCase
  
     use  RefreshDatabase;
     
-    public function it_can_get_all_accounts_with_specific_columns()
+    public function it_can_get_all_accounts()
     {
         // create some accounts
         $accounts = \App\Models\Account::factory()->count(5)->create();
@@ -26,13 +26,12 @@ class AccountTest extends TestCase
             'country',
         ];
 
-        // make a GET request to the accounts index route with the selected columns
         $response = $this->get(route('accounts', ['columns' => $columns]));
 
-        // assert that the response has a successful status code
+        // // assert that the response has a successful status code
         $response->assertStatus(200);
 
-        // assert that the response contains all of the accounts created with the specified columns
+        // // assert that the response contains all of the accounts created with the specified columns
         foreach ($accounts as $account) {
             $response->assertJsonFragment([
                 'account_number' => $account->account_number,
@@ -42,6 +41,7 @@ class AccountTest extends TestCase
                 'country' => $account->country,
             ]);
         }
+              
     }
 
     /**
