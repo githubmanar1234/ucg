@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Http;
 use App\Http\Resources\Transfers\TransferResource;
 use App\Http\Requests\TransferRequest;
 use App\Traits\TransferTrait;
+use DB;
 
 class TransferController extends BaseController
 {
@@ -23,18 +24,24 @@ class TransferController extends BaseController
         $user_id = Auth()->user()->id;
         if(Auth()->user()->hasPermissionTo('transfer')){
             $input = $request->all();
-            $check_accounts = $this->check_accounts($input['from'],$input['to'],$input['amount'],$user_id);
-            if($check_accounts){
-                $transfer = new Transfer();
-                $transfer->from = $input['from'];
-                $transfer->to = $input['to'];
-                $transfer->amount = $input['amount'];
-                $transfer->save();
-    
-                return $this->sendResponse(new TransferResource($transfer),'transfer created successfully.');  
-            }
-            else{
-                return $this->sendError('You cannt transfer from this account.', ['error'=>'You cannt transfer from this account']); 
+            DB::beginTransaction();
+            try{ 
+                $check_accounts = $this->check_accounts($input['from'],$input['to'],$input['amount'],$user_id);
+                if($check_accounts){
+                    $transfer = new Transfer();
+                    $transfer->from = $input['from'];
+                    $transfer->to = $input['to'];
+                    $transfer->amount = $input['amount'];
+                    $transfer->save();
+        
+                    return $this->sendResponse(new TransferResource($transfer),'transfer created successfully.');  
+                }
+                else{
+                    DB::rollback();
+                    return $this->sendError('You cannt transfer from this account.', ['error'=>'You cannt transfer from this account']); 
+                }
+            }catch(Exception $e){
+                DB::rollback();
             }
         }
         return $this->sendError('You do not have required permission.', ['error'=>'You do not have required permission']); 
